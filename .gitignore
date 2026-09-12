@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# Testing
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+.coverage
+htmlcov/
+
+# Application logs
+activity_log.txt
+notification_log.txt
+calendar_log.txt
+
