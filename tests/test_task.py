@@ -1,3 +1,8 @@
+from app.ai_service import generate_task_suggestion
+
+
+
+
 def test_create_task(client):
     # Register a test user.
     response = client.post(
@@ -793,50 +798,33 @@ def test_login_unknown_email(client):
     assert data["error"]["detail"] == "Invalid email or password"
     assert data["error"]["status_code"] == 401
 
-def test_suggest_task(client):
-    register = client.post(
-        "/auth/register",
+def test_generate_task_suggestion(requests_mock):
+
+    requests_mock.post(
+        "http://localhost:11434/api/generate",
         json={
-            "name": "AI User",
-            "email": "ai@example.com",
-            "password": "TestPassword123",
+            "response": (
+                "Break the task into smaller actionable steps."
+            )
         },
     )
 
-    assert register.status_code == 201
-
-    token = register.json()["access_token"]
-
-    create = client.post(
-        "/tasks",
-        headers={
-            "Authorization": f"Bearer {token}",
-        },
-        json={
-            "title": "Learn FastAPI",
-            "description": "Study dependency injection and authentication.",
-            "priority": "high",
-        },
+    result = generate_task_suggestion(
+        "Finish database migration"
     )
 
-    assert create.status_code == 201
-
-    task_id = create.json()["id"]
-
-    response = client.post(
-        f"/tasks/{task_id}/suggest",
-        headers={
-            "Authorization": f"Bearer {token}",
-        },
+    assert result == (
+        "Break the task into smaller actionable steps."
     )
 
-    assert response.status_code == 200
 
-    data = response.json()
 
-    assert "suggestion" in data
-    assert isinstance(data["suggestion"], str)
-    assert len(data["suggestion"]) > 0
+
+
+
+
+
+
 
 
 def test_suggest_task_forbidden_for_other_user(client):
@@ -919,7 +907,20 @@ def test_suggest_task_not_found(client):
     assert data["error"]["type"] == "NotFoundException"
     assert data["error"]["status_code"] == 404
 
-def test_suggest_task(client):
+
+
+
+
+
+def test_suggest_task(client, monkeypatch):
+    def fake_generate_task_suggestion(task_text):
+        return "Break this task into smaller actionable steps."
+
+    monkeypatch.setattr(
+        "app.routers.tasks.generate_task_suggestion",
+        fake_generate_task_suggestion,
+    )
+
     register = client.post(
         "/auth/register",
         json={
@@ -962,94 +963,7 @@ def test_suggest_task(client):
 
     data = response.json()
 
-    assert "suggestion" in data
-    assert isinstance(data["suggestion"], str)
-    assert len(data["suggestion"]) > 0
-
-
-def test_suggest_task_forbidden_for_other_user(client):
-    first_user = client.post(
-        "/auth/register",
-        json={
-            "name": "First AI User",
-            "email": "first-ai@example.com",
-            "password": "TestPassword123",
-        },
+    assert data["suggestion"] == (
+        "Break this task into smaller actionable steps."
     )
 
-    assert first_user.status_code == 201
-
-    first_token = first_user.json()["access_token"]
-
-    create = client.post(
-        "/tasks",
-        headers={
-            "Authorization": f"Bearer {first_token}",
-        },
-        json={
-            "title": "Private AI task",
-            "description": "This task belongs to another user.",
-            "priority": "high",
-        },
-    )
-
-    assert create.status_code == 201
-
-    task_id = create.json()["id"]
-
-    second_user = client.post(
-        "/auth/register",
-        json={
-            "name": "Second AI User",
-            "email": "second-ai@example.com",
-            "password": "TestPassword123",
-        },
-    )
-
-    assert second_user.status_code == 201
-
-    second_token = second_user.json()["access_token"]
-
-    response = client.post(
-        f"/tasks/{task_id}/suggest",
-        headers={
-            "Authorization": f"Bearer {second_token}",
-        },
-    )
-
-    assert response.status_code == 403
-
-    data = response.json()
-
-    assert data["error"]["type"] == "ForbiddenException"
-    assert data["error"]["status_code"] == 403
-
-
-def test_suggest_task_not_found(client):
-    register = client.post(
-        "/auth/register",
-        json={
-            "name": "Missing AI User",
-            "email": "missing-ai@example.com",
-            "password": "TestPassword123",
-        },
-    )
-
-    assert register.status_code == 201
-
-    token = register.json()["access_token"]
-
-    response = client.post(
-        "/tasks/9999/suggest",
-        headers={
-            "Authorization": f"Bearer {token}",
-        },
-    )
-
-    assert response.status_code == 404
-
-    data = response.json()
-
-    assert data["error"]["type"] == "NotFoundException"
-    assert data["error"]["status_code"] == 404
-    

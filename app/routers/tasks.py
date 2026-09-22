@@ -8,7 +8,7 @@ from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate, TaskSuggestio
 from app.utils.exceptions import ForbiddenException, NotFoundException
 from app.utils.notifications import log_activity, update_calendar
 from app.utils.security import get_current_user
-
+from app.ai_service import generate_task_suggestion
 
 
 router = APIRouter(
@@ -345,15 +345,14 @@ def suggest_task(
         task_id,
         current_user,
         db,
-        )
+    )
 
-    suggestion = (
-        f"AI suggestion for '{task.title}': "
-        f"Break this task into smaller actionable steps."
-        )
+    suggestion = generate_task_suggestion(
+        task.title
+    )
 
     return {
         "suggestion": suggestion,
-        }
+    }
 
 

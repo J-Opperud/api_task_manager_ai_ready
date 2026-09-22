@@ -275,21 +275,96 @@ The background functionality provides a foundation for additional tasks such as 
 
 ## AI-Ready Endpoint
 
-The project includes a placeholder endpoint designed for future AI integration:
+ Ollama AI Integration
 
-POST /tasks/{id}/suggest
+The Task Manager API includes an AI-powered task suggestion endpoint using Ollama and the local llama3.2 language model.
+
+## How It Works
+
+The AI request flows through the backend rather than directly from the frontend:
+
+Streamlit
+    ↓
+POST /tasks/{task_id}/suggest
+    ↓
+FastAPI
+    ↓
+generate_task_suggestion()
+    ↓
+Ollama
+    ↓
+llama3.2
+    ↓
+Generated suggestion
 
 
-The endpoint accepts the authenticated user's task ID, retrieves the task description, and returns a placeholder suggestion.
+This keeps the AI integration centralized in the API and allows the frontend to consume the AI feature through a normal REST endpoint.
+
+## Ollama Setup
+
+Install Ollama from the official website:
+
+
+After installation, download the model used by this API:
+
+ollama pull llama3.2
+
+
+Verify the installed models:
+
+ollama list
+
+
+Test the model directly:
+
+ollama run llama3.2
+
+
+
+
+
+The application uses the Ollama generation endpoint:
+
+POST http://localhost:<XXXXXXXX>/api/generate
+
+AI Endpoint
+
+Authenticated users can request a suggestion for one of their tasks:
+
+POST /tasks/{task_id}/suggest
+Authorization: Bearer <JWT>
+
 
 Example response:
 
 {
-  "suggestion": "Break this task into smaller steps and prioritize the most important action first."
+  "suggestion": "Review dependency injection, then implement authentication and test both behaviors."
 }
 
 
-The endpoint is intentionally structured so a real AI model can be connected later without changing the core task-management functionality.
+The endpoint verifies that the task belongs to the authenticated user before requesting an AI suggestion.
+
+Configuration
+
+The AI service currently connects to:
+
+http://localhost:11434/api/generate
+
+
+and requests:
+
+llama3.2
+
+
+The model runs locally through Ollama, so no external AI API key is required.
+
+Development and Testing
+
+The automated API tests mock the AI generation function. This allows the test suite to run without requiring Ollama:
+
+Ollama provides a simple local interface for running open language models. It allows this project to integrate an LLM into the API without requiring a cloud AI service or external API key.
+
+The model can be changed later by updating the model configuration in the AI service..
 
 ## Security
               config.py
@@ -426,4 +501,3 @@ API documentation
 Test coverage
 A foundation for future AI integration
 
-The AI suggestion endpoint provides the starting point for extending the application with an actual AI model in future modules.
